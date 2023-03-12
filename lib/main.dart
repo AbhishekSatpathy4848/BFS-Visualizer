@@ -20,7 +20,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  int totalNodes = 100;
+  int totalNodes = 50;
   List<GraphNodeClass> graph = [];
   List<Point> coordinates = [];
   Map<int, List<GraphNodeClass>> adjList = {};
@@ -180,9 +180,8 @@ class _MyAppState extends State<MyApp> {
                       child: const Icon(Icons.add),
                       onPressed: () {
                         if (currentNode >= totalNodes) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  "Only a maximum of $totalNodes nodes can be spawned!!")));
+                          disconnectedGraphNotifier.value =
+                              "Only a maximum of $totalNodes node(s) can be spawned!!";
                           return;
                         }
                         setState(() {
@@ -256,6 +255,8 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  //BFS Algorithm
+  
   // ignore: non_constant_identifier_names
   Future<void> bfs_connected(Queue<int> q) async {
     while (q.isNotEmpty) {
