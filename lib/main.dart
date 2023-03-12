@@ -20,7 +20,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  int totalNodes = 50;
+  int totalNodes = 100;
   List<GraphNodeClass> graph = [];
   List<Point> coordinates = [];
   Map<int, List<GraphNodeClass>> adjList = {};
@@ -297,10 +297,9 @@ class _MyAppState extends State<MyApp> {
     for (var element in graph) {
       if (element.isExplored == false) {
         disconnectedGraphNotifier.value =
-            "disconnected graph has been detected!! Starting BFS on it from position ${element.value}";
+            "Disconnected graph has been detected!! Starting BFS on it from position ${element.value}";
         await Future.delayed(const Duration(seconds: 2));
         await bfs(element.value);
-        // break;
       }
     }
   }
