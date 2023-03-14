@@ -2,7 +2,6 @@ import 'dart:collection';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:core';
-import 'package:motion_toast/motion_toast.dart';
 
 import 'package:bfs_visualiser/Graph_Node_widget.dart';
 import 'package:bfs_visualiser/graph_node_class.dart';
@@ -30,8 +29,12 @@ class _MyAppState extends State<MyApp> {
   TextEditingController? startNodeTextController;
   final formKey = GlobalKey<FormState>();
   ValueNotifier<String> disconnectedGraphNotifier = ValueNotifier("");
+  late Widget _animatedWidget_1;
+  late Widget _animatedWidget_2;
+  late Widget _currentAnimatedWidget;
 
   initCoordinates() {
+    coordinates.clear();
     int count = 0;
     while (count != totalNodes) {
       int x = Random().nextInt(window.physicalSize.width ~/ 2.2);
@@ -49,6 +52,79 @@ class _MyAppState extends State<MyApp> {
         count++;
       }
     }
+    _animatedWidget_2 = SizedBox(
+      height: 150,
+      width: 220,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Form(
+            key: formKey,
+            autovalidateMode: AutovalidateMode.always,
+            child: TextFormField(
+              decoration: InputDecoration(
+                  hintText: "Starting node",
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10))),
+              controller: startNodeTextController,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return "Enter a value";
+                }
+                if (!RegExp(r'^-*[0-9]+$').hasMatch(value)) {
+                  return "Please enter a number";
+                }
+                if (int.parse(value) < 0) {
+                  return "Enter a positive number";
+                }
+                if (currentNode == 0 && int.parse(value) >= 0) {
+                  return "Add some Nodes to the canvas";
+                }
+                if (int.parse(value) >= currentNode) {
+                  return "Enter a value between 0 and ${currentNode - 1}";
+                }
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          FloatingActionButton.extended(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  startVisualisation = true;
+                  await bfs(int.parse(startNodeTextController!.text));
+                  disconnectedGraphNotifier.value = "Completed BFS!!";
+                  setState(() {
+                    _currentAnimatedWidget = _animatedWidget_1;
+                    startVisualisation = false;
+                    startNodeTextController?.clear();
+                  });
+                }
+              },
+              label: const Text(
+                "Start",
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ))
+        ],
+      ),
+    );
+
+    _animatedWidget_1 = SizedBox(
+      child: FloatingActionButton.extended(
+        label: const Text("Start Visualisation"),
+        hoverColor: Colors.green,
+        onPressed: () {
+          setState(() {
+            _currentAnimatedWidget = _animatedWidget_2;
+          });
+        },
+      ),
+    );
+
+    _currentAnimatedWidget = _animatedWidget_1;
   }
 
   @override
@@ -63,92 +139,28 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
           floatingActionButton: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Builder(builder: (context) {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 40.0),
-                  child: FloatingActionButton.extended(
-                    label: const Text("Start Visualisation"),
-                    hoverColor: Colors.green,
-                    onPressed: () {
-                      showModalBottomSheet(
-                              clipBehavior: Clip.hardEdge,
-                              isDismissible: true,
-                              context: context,
-                              builder: ((context) {
-                                return Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        "Enter the starting node",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20),
-                                      ),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
-                                      Form(
-                                        key: formKey,
-                                        autovalidateMode:
-                                            AutovalidateMode.always,
-                                        child: TextFormField(
-                                          controller: startNodeTextController,
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty) {
-                                              return "Enter a value";
-                                            }
-                                            if (!RegExp(r'^[0-9]+$')
-                                                .hasMatch(value)) {
-                                              return "Please enter a number";
-                                            }
-                                            if (currentNode == 0) {
-                                              return "Please add some Nodes to the canvas";
-                                            }
-                                            if (int.parse(value) >=
-                                                currentNode) {
-                                              return "Entered value should lie between 0 and ${currentNode - 1}";
-                                            }
-                                            return null;
-                                          },
-                                        ),
-                                      ),
-                                      TextButton(
-                                          onPressed: () {
-                                            if (formKey.currentState!
-                                                .validate()) {
-                                              Navigator.of(context).pop();
-                                              startVisualisation = true;
-                                              bfs(int.parse(
-                                                  startNodeTextController!
-                                                      .text));
-                                            }
-                                          },
-                                          child: const Padding(
-                                            padding: EdgeInsets.all(16.0),
-                                            child: Center(
-                                                child: Text(
-                                              "Start",
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 15),
-                                            )),
-                                          ))
-                                    ],
-                                  ),
-                                );
-                              }))
-                          .whenComplete(() => startNodeTextController!.clear());
-                    },
-                  ),
-                );
-              }),
+              !startVisualisation
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 40.0),
+                      child: Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(
+                            milliseconds: 300,
+                          ),
+                          transitionBuilder: (child, animation) {
+                            return ScaleTransition(
+                                scale: animation, child: child);
+                          },
+                          child: _currentAnimatedWidget,
+                        ),
+                      ),
+                    )
+                  : Container(),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0, vertical: 10.0),
                 child: ValueListenableBuilder(
                     valueListenable: disconnectedGraphNotifier,
                     builder: ((context, value, child) {
@@ -158,33 +170,38 @@ class _MyAppState extends State<MyApp> {
                     })),
               ),
               const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(right: 50.0),
-                child: FloatingActionButton.extended(
-                  onPressed: () {
-                    setState(() {
-                      graph = [];
-                      adjList = {};
-                      currentNode = 0;
-                      lastDoubleTapGraph = null;
-                      startVisualisation = false;
-                      disconnectedGraphNotifier.value = "";
-                      initCoordinates();
-                    });
-                  },
-                  label: const Text("Reset"),
-                ),
-              ),
+              !startVisualisation
+                  ? Padding(
+                      padding: const EdgeInsets.only(right: 50.0),
+                      child: FloatingActionButton.extended(
+                        onPressed: () {
+                          lastDoubleTapGraph = null;
+                          startVisualisation = false;
+                          initCoordinates();
+                          currentNode = 0;
+                          disconnectedGraphNotifier.value = "";
+                          setState(() {
+                            graph = [];
+                            adjList = {};
+                            _currentAnimatedWidget = _animatedWidget_1;
+                          });
+                        },
+                        label: const Text("Reset"),
+                      ),
+                    )
+                  : Container(),
               !startVisualisation
                   ? FloatingActionButton(
                       child: const Icon(Icons.add),
                       onPressed: () {
+                        startNodeTextController?.clear();
                         if (currentNode >= totalNodes) {
                           disconnectedGraphNotifier.value =
                               "Only a maximum of $totalNodes node(s) can be spawned!!";
                           return;
                         }
                         setState(() {
+                          _currentAnimatedWidget = _animatedWidget_1;
                           graph.add(GraphNodeClass(value: currentNode));
                           currentNode++;
                         });
@@ -213,39 +230,41 @@ class _MyAppState extends State<MyApp> {
                                 left: coordinates[e.value].x.toDouble(),
                                 child: GestureDetector(
                                     onTap: () {
-                                      if (!startVisualisation){
-                                      if (lastDoubleTapGraph == null) {
-                                        lastDoubleTapGraph = e;
-                                        // print("tapped");
-                                      } else {
-                                        if (e.value != lastDoubleTapGraph!.value) {
-                                          setState(() {
-                                            if (adjList.containsKey(
-                                                lastDoubleTapGraph!.value)) {
-                                              adjList[lastDoubleTapGraph!
-                                                      .value]!
-                                                  .add(e);
-                                            } else {
-                                              adjList[lastDoubleTapGraph!
-                                                  .value] = [e];
-                                            }
-                                            if (adjList.containsKey(e.value)) {
-                                              {
-                                                adjList[e.value]!
-                                                    .add(lastDoubleTapGraph!);
+                                      if (!startVisualisation) {
+                                        if (lastDoubleTapGraph == null) {
+                                          lastDoubleTapGraph = e;
+                                          // print("tapped");
+                                        } else {
+                                          if (e.value !=
+                                              lastDoubleTapGraph!.value) {
+                                            setState(() {
+                                              if (adjList.containsKey(
+                                                  lastDoubleTapGraph!.value)) {
+                                                adjList[lastDoubleTapGraph!
+                                                        .value]!
+                                                    .add(e);
+                                              } else {
+                                                adjList[lastDoubleTapGraph!
+                                                    .value] = [e];
                                               }
-                                            } else {
-                                              adjList[e.value] = [
-                                                lastDoubleTapGraph!
-                                              ];
-                                            }
-                                            lastDoubleTapGraph = null;
-                                            // print("Tapped 2");
-                                            // print("$adjList");
-                                          });
+                                              if (adjList
+                                                  .containsKey(e.value)) {
+                                                {
+                                                  adjList[e.value]!
+                                                      .add(lastDoubleTapGraph!);
+                                                }
+                                              } else {
+                                                adjList[e.value] = [
+                                                  lastDoubleTapGraph!
+                                                ];
+                                              }
+                                              lastDoubleTapGraph = null;
+                                              // print("Tapped 2");
+                                              // print("$adjList");
+                                            });
+                                          }
                                         }
                                       }
-                                    }
                                     },
                                     child: GraphNode(graph: e)),
                               ))
@@ -256,7 +275,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   //BFS Algorithm
-  
+
   // ignore: non_constant_identifier_names
   Future<void> bfs_connected(Queue<int> q) async {
     while (q.isNotEmpty) {
