@@ -29,7 +29,7 @@ class _GraphNodeState extends State<GraphNode> {
             shape: BoxShape.circle),
         child: Center(
           child: Text(
-            widget.graph.value.toString(),
+            widget.graph.value == null ? "" : widget.graph.value.toString(),
             style: const TextStyle(
               color: Colors.black,
               fontSize: 20,

@@ -1,9 +1,9 @@
 class GraphNodeClass {
-  bool isVisited = false;
-  bool isExplored = false;
-  int value;
+  bool isVisited;
+  bool isExplored;
+  int? value;
 
-  GraphNodeClass({required this.value});
+  GraphNodeClass({this.value,required this.isVisited,required this.isExplored});
 
   markVisited() {
     isVisited = true;

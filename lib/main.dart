@@ -137,140 +137,176 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-          floatingActionButton: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              !startVisualisation
-                  ? Padding(
-                      padding: const EdgeInsets.only(left: 40.0),
-                      child: Expanded(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(
-                            milliseconds: 300,
+      home: window.physicalSize.width > 1500 &&
+              window.physicalSize.height > 1000
+          ? Scaffold(
+              floatingActionButton: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  !startVisualisation
+                      ? Padding(
+                          padding: const EdgeInsets.only(left: 40.0),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(
+                              milliseconds: 300,
+                            ),
+                            child: _currentAnimatedWidget,
                           ),
-                          transitionBuilder: (child, animation) {
-                            return ScaleTransition(
-                                scale: animation, child: child);
+                        )
+                      : Container(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 10.0),
+                    child: ValueListenableBuilder(
+                        valueListenable: disconnectedGraphNotifier,
+                        builder: ((context, value, child) {
+                          return Text(value,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800, fontSize: 16));
+                        })),
+                  ),
+                  const Spacer(),
+                  !startVisualisation
+                      ? Padding(
+                          padding: const EdgeInsets.only(right: 50.0),
+                          child: FloatingActionButton.extended(
+                            onPressed: () {
+                              lastDoubleTapGraph = null;
+                              startVisualisation = false;
+                              initCoordinates();
+                              currentNode = 0;
+                              disconnectedGraphNotifier.value = "";
+                              setState(() {
+                                graph = [];
+                                adjList = {};
+                                _currentAnimatedWidget = _animatedWidget_1;
+                              });
+                            },
+                            label: const Text("Reset"),
+                          ),
+                        )
+                      : Container(),
+                  !startVisualisation
+                      ? FloatingActionButton(
+                          child: const Icon(Icons.add),
+                          onPressed: () {
+                            startNodeTextController?.clear();
+                            if (currentNode >= totalNodes) {
+                              disconnectedGraphNotifier.value =
+                                  "Only a maximum of $totalNodes node(s) can be spawned!!";
+                              return;
+                            }
+                            setState(() {
+                              _currentAnimatedWidget = _animatedWidget_1;
+                              graph.add(GraphNodeClass(
+                                  value: currentNode,
+                                  isVisited: false,
+                                  isExplored: false));
+                              currentNode++;
+                            });
                           },
-                          child: _currentAnimatedWidget,
-                        ),
-                      ),
-                    )
-                  : Container(),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 10.0),
-                child: ValueListenableBuilder(
-                    valueListenable: disconnectedGraphNotifier,
-                    builder: ((context, value, child) {
-                      return Text(value,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 16));
-                    })),
+                        )
+                      : SizedBox(
+                          height: 0,
+                          width: 0,
+                          child: FloatingActionButton(onPressed: () {})),
+                ],
               ),
-              const Spacer(),
-              !startVisualisation
-                  ? Padding(
-                      padding: const EdgeInsets.only(right: 50.0),
-                      child: FloatingActionButton.extended(
-                        onPressed: () {
-                          lastDoubleTapGraph = null;
-                          startVisualisation = false;
-                          initCoordinates();
-                          currentNode = 0;
-                          disconnectedGraphNotifier.value = "";
-                          setState(() {
-                            graph = [];
-                            adjList = {};
-                            _currentAnimatedWidget = _animatedWidget_1;
-                          });
-                        },
-                        label: const Text("Reset"),
-                      ),
-                    )
-                  : Container(),
-              !startVisualisation
-                  ? FloatingActionButton(
-                      child: const Icon(Icons.add),
-                      onPressed: () {
-                        startNodeTextController?.clear();
-                        if (currentNode >= totalNodes) {
-                          disconnectedGraphNotifier.value =
-                              "Only a maximum of $totalNodes node(s) can be spawned!!";
-                          return;
-                        }
-                        setState(() {
-                          _currentAnimatedWidget = _animatedWidget_1;
-                          graph.add(GraphNodeClass(value: currentNode));
-                          currentNode++;
-                        });
-                      },
-                    )
-                  : SizedBox(
-                      height: 0,
-                      width: 0,
-                      child: FloatingActionButton(onPressed: () {})),
-            ],
-          ),
-          appBar: AppBar(
-            title: const Text('BFS Visualiser'),
-          ),
-          body: Builder(builder: (context) {
-            return SizedBox(
-                height: MediaQuery.of(context).size.height,
-                width: MediaQuery.of(context).size.width,
-                child: CustomPaint(
-                  painter:
-                      LinePainter(adjList: adjList, coordinates: coordinates),
-                  child: Stack(
-                      children: graph
-                          .map((e) => Positioned(
-                                top: coordinates[e.value].y.toDouble(),
-                                left: coordinates[e.value].x.toDouble(),
-                                child: GestureDetector(
-                                    onTap: () {
-                                      if (!startVisualisation) {
-                                        if (lastDoubleTapGraph == null) {
-                                          lastDoubleTapGraph = e;
-                                          // print("tapped");
-                                        } else {
-                                          if (e.value !=
-                                              lastDoubleTapGraph!.value) {
-                                            setState(() {
-                                              if (adjList.containsKey(
-                                                  lastDoubleTapGraph!.value)) {
-                                                adjList[lastDoubleTapGraph!
-                                                        .value]!
-                                                    .add(e);
-                                              } else {
-                                                adjList[lastDoubleTapGraph!
-                                                    .value] = [e];
-                                              }
-                                              if (adjList
-                                                  .containsKey(e.value)) {
-                                                {
-                                                  adjList[e.value]!
-                                                      .add(lastDoubleTapGraph!);
+              appBar: AppBar(
+                title: const Text('BFS Visualiser'),
+              ),
+              body: Builder(builder: (context) {
+                return SizedBox(
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
+                    child: CustomPaint(
+                      painter: LinePainter(
+                          adjList: adjList, coordinates: coordinates),
+                      child: Stack(children: [
+                        startVisualisation
+                            ? Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Align(
+                                    alignment: Alignment.bottomRight,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0),
+                                          child: GraphNode(
+                                              graph: GraphNodeClass(
+                                                  isVisited: true,
+                                                  isExplored: false)),
+                                        ),
+                                        const Text("-> Visited"),
+                                        const SizedBox(width: 10,),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0),
+                                          child: GraphNode(
+                                              graph: GraphNodeClass(
+                                                  isVisited: false,
+                                                  isExplored: true)),
+                                        ),
+                                        const Text("-> Explored"),
+                                      ],
+                                    )),
+                              )
+                            : Container(),
+                        ...graph
+                            .map((e) => Positioned(
+                                  top: coordinates[e.value!].y.toDouble(),
+                                  left: coordinates[e.value!].x.toDouble(),
+                                  child: GestureDetector(
+                                      onTap: () {
+                                        if (!startVisualisation) {
+                                          if (lastDoubleTapGraph == null) {
+                                            lastDoubleTapGraph = e;
+                                            // print("tapped");
+                                          } else {
+                                            if (e.value !=
+                                                lastDoubleTapGraph!.value) {
+                                              setState(() {
+                                                if (adjList.containsKey(
+                                                    lastDoubleTapGraph!
+                                                        .value)) {
+                                                  adjList[lastDoubleTapGraph!
+                                                          .value]!
+                                                      .add(e);
+                                                } else {
+                                                  adjList[lastDoubleTapGraph!
+                                                      .value!] = [e];
                                                 }
-                                              } else {
-                                                adjList[e.value] = [
-                                                  lastDoubleTapGraph!
-                                                ];
-                                              }
-                                              lastDoubleTapGraph = null;
-                                              // print("Tapped 2");
-                                              // print("$adjList");
-                                            });
+                                                if (adjList
+                                                    .containsKey(e.value)) {
+                                                  {
+                                                    adjList[e.value]!.add(
+                                                        lastDoubleTapGraph!);
+                                                  }
+                                                } else {
+                                                  adjList[e.value!] = [
+                                                    lastDoubleTapGraph!
+                                                  ];
+                                                }
+                                                lastDoubleTapGraph = null;
+                                                // print("Tapped 2");
+                                                // print("$adjList");
+                                              });
+                                            }
                                           }
                                         }
-                                      }
-                                    },
-                                    child: GraphNode(graph: e)),
-                              ))
-                          .toList()),
-                ));
-          })),
+                                      },
+                                      child: GraphNode(graph: e)),
+                                ))
+                            .toList()
+                      ]),
+                    ));
+              }))
+          : Container(
+              color: Colors.black,
+              child: const Center(child: Text("Please use a larger device"),),
+            ),
     );
   }
 
@@ -283,11 +319,11 @@ class _MyAppState extends State<MyApp> {
       // print("${adjList[front]}");
       if (adjList.containsKey(front)) {
         for (GraphNodeClass visitingNode in adjList[front]!) {
-          if (!graph[visitingNode.value].isVisited) {
+          if (!graph[visitingNode.value!].isVisited) {
             setState(() {
-              graph[visitingNode.value].markVisited();
+              graph[visitingNode.value!].markVisited();
             });
-            q.add(visitingNode.value);
+            q.add(visitingNode.value!);
             await Future.delayed(const Duration(seconds: 1));
             // print("${visitingNode.value} visited \n");
           }
@@ -319,7 +355,7 @@ class _MyAppState extends State<MyApp> {
         disconnectedGraphNotifier.value =
             "Disconnected graph has been detected!! Starting BFS on it from position ${element.value}";
         await Future.delayed(const Duration(seconds: 2));
-        await bfs(element.value);
+        await bfs(element.value!);
       }
     }
   }
@@ -342,8 +378,8 @@ class LinePainter extends CustomPainter {
         canvas.drawLine(
             Offset(coordinates[e_1].x.toDouble() + 20,
                 coordinates[e_1].y.toDouble() + 20),
-            Offset(coordinates[element.value].x.toDouble() + 20,
-                coordinates[element.value].y.toDouble() + 20),
+            Offset(coordinates[element.value!].x.toDouble() + 20,
+                coordinates[element.value!].y.toDouble() + 20),
             paint);
       }
     });
